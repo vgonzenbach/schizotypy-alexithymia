@@ -74,7 +74,6 @@ prep_BVAQ = function(data, item_stem = "BVAQ"){
   return(BVAQ)
 }
 
-
 score_BVAQ = function(data){
   
   BVAQ = prep_BVAQ(data)
