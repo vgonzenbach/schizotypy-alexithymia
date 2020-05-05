@@ -1,0 +1,589 @@
+---
+title: "Linear models: Schizotypy and self-reported Alexithymia"
+author: "Virgilio Gonzenbach"
+date: "2/24/2020"
+output: 
+  pdf_document: 
+    latex_engine: "xelatex"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, root.dir = "./Rmarkdown", cache = TRUE)
+library(gridExtra)
+library(ggplotify)
+library(officer)
+library(grid)
+#library(GGally)
+library(psych)
+library(ggplot2)
+#library(selfea)
+library(dplyr)
+#library(xtable)
+library(Hmisc)
+library(lmSupport)
+source("../src/corstars.R")
+```
+
+The primary purpose of this analysis is to examine the complex relationship between 3 schizotypy factors—positive, negative, and disorganized schizotypy—and 2 factors of alexithymia: cognitive and affective alexithymia. Cognitive alexithymia consists of 3 subfactors—difficulty in identifying, analyzing and verbalizing emotions—while affective alexithymia is defined as diminished emotionalizing and fantasizing.
+
+# Hypotheses:
+Per the SEAS research prospectus, it was hypothesized that:  
+1. Positive schizotypy will be positively correlated with cognitive alexithymia and negatively correlated with affective alexithymia.  
+2. Negative schizotypy will be positively correlated with cognitive alexithymia and affective alexithymia.  
+3. Disorganized schizotypy will be positively correlated with cognitive alexithymia.  
+
+
+```{r data, echo=FALSE}
+#Select variables for analysis
+demographics = read.csv("../data/main/df_seas_filtered_clean.csv")[, c("Age", "Gender", "Race", "Ethn", "English", "Handedness", "YoE", "meds",
+                                              "diagnosis")]
+scores = read.csv("../data/main/df_scored.csv")
+
+#Create dataframe
+df = data.frame(demographics, scores)
+main_df = df %>% 
+  select(ends_with("schz"), ends_with("bvaq"), ends_with("alex"), ends_with("PANAS", ignore.case = FALSE)) %>% 
+  scale() %>% 
+  as.data.frame()
+```
+
+
+```{r univariate_quantitative, echo=FALSE, include=FALSE}
+# Univariate statistics
+## Quantitative
+#Describe quantitative variables
+qualitative = names(Filter(is.factor, df))
+(df %>% 
+  select(-qualitative)) %>% 
+  describe(na.rm = TRUE)
+```
+
+
+```{r univariate_qualitative, echo=FALSE, include=FALSE}
+## Qualitative
+#Describe qualitative variables
+df[, qualitative] %>% 
+  apply(2, function(table){table(table)})
+```
+
+# Histograms of variables of interest
+## Schizotypy
+
+```{r hist_schz, echo=FALSE}
+##Histograms 
+#Schizotypy
+hist_pos = df %>% 
+  ggplot(aes(x = pos_schz)) +
+  geom_histogram(bins = 25) +
+  xlab("Positive")
+
+hist_neg = df %>% 
+  ggplot(aes(x = neg_schz)) +
+  geom_histogram(bins = 25) +
+  xlab("Negative")
+
+hist_dis = df %>% 
+  ggplot(aes(x = dis_schz)) +
+  geom_histogram(bins = 25) + 
+  xlab("Disorganized")
+
+grid.arrange(as.grob(hist_pos),
+     as.grob(hist_neg),
+     as.grob(hist_dis),
+     ncol = 3, nrow = 1)
+```
+
+## Bermond-Vorst Alexithymia Questionnaire
+Lower scores are alexithymia-indicative, reflecting difficulties identifying, analyzing, and verbalizing emotions and diminished emotionalizing and fantasizing.
+
+```{r hist_bvaq, echo=FALSE}
+#Emotional Awareness
+emot_hist = df %>% 
+  ggplot(aes(x = emot_bvaq)) +
+  geom_histogram(bins = 33) + 
+  xlab("Emotionalizing")
+
+fant_hist = df %>% 
+  ggplot(aes(x = fant_bvaq)) +
+  geom_histogram(bins = 32) +
+  xlab("Fantasizing")
+
+idnt_hist = df %>% 
+  ggplot(aes(x = idnt_bvaq)) +
+  geom_histogram(bins = 30) + 
+  xlab("Identifying")
+
+nylz_hist = df %>% 
+  ggplot(aes(x = nlyz_bvaq)) +
+  geom_histogram(bins = 30) +
+  xlab("Analyzing")
+
+verb_hist = df %>% 
+  ggplot(aes(x = verb_bvaq)) +
+  geom_histogram(bins = 30) +
+  xlab("Verbalizing")
+
+grid.arrange(as.grob(emot_hist), as.grob(fant_hist), 
+             as.grob(idnt_hist), as.grob(nylz_hist),
+             as.grob(verb_hist),
+             ncol = 3, nrow = 2)
+```
+
+## Positive and Negative Affect Schedule
+```{r, echo=FALSE}
+pa_hist = df %>% 
+  ggplot(aes(x = pa_PANAS)) +
+  geom_histogram(bins = 21) + 
+  xlab("Positive Affect")
+
+na_hist = df %>% 
+  ggplot(aes(x = na_PANAS)) +
+  geom_histogram(bins = 21) +
+  xlab("Negative Affect")
+
+grid.arrange(as.grob(pa_hist), as.grob(na_hist),
+             ncol = 1, nrow = 2)
+```
+
+# Correlation matrices
+
+## Schizotypy and Alexithymia (2nd-order factors)
+```{r echo=FALSE}
+schz = df %>% 
+  select(ends_with("schz")) %>% 
+  as.matrix()
+alex = df %>% 
+  select(ends_with("alex")) %>% 
+  as.matrix()
+bvaq = df %>% 
+  select(ends_with("bvaq")) %>% 
+  as.matrix()
+panas = df %>% 
+  select(ends_with("PANAS")) %>% 
+  as.matrix()
+corstars(cbind(schz, alex))
+```
+
+
+## Schizotypy and Alexithymia (1st-order factors)
+
+```{r echo=FALSE}
+corstars(cbind(schz, bvaq))
+```
+
+## Schizotypy and Affect
+
+```{r echo=FALSE}
+corstars(cbind(schz, panas))
+```
+
+## Alexithymia and Affect
+
+```{r echo=FALSE}
+corstars(cbind(alex, panas))
+```
+
+```{r echo=FALSE}
+corstars(cbind(bvaq, panas))
+```
+
+# Linear Models: BVAQ scores predicted by schizotypy dimensions
+
+```{r echo=FALSE}
+summarized_models = vector(mode = "list", length = 3)
+detailed_models = vector(mode = "list", length = 5)
+pa_models = list()
+subfactor_models = list()
+```
+
+For each model, the summary of the multiple linear regression with all predictors entered simulatenously is given first. This is followed by the delta Rs for each of the predictors (schizotypy dimensions) when they are entered into the model last. Finally, a scatterplot is included in which each schizotypy dimensions' unique variance is used to predict the outcome variable (BVAQ scores)—each schizotypy dimensions has been partialed out by the other two dimensions.
+
+## Summarized models
+
+### Cognitive Alexithymia
+
+```{r echo=FALSE}
+reg = lm(cog_alex ~ pos_schz + neg_schz + dis_schz, data = main_df)
+summary(reg)
+print("Betas"); coef(reg)[2:4]
+modelEffectSizes(reg)
+```
+
+*Relationship between positive schizotypy and cognitive alexithymia* is predicated on common variance with other schizotypy factors: extracting common variance with disorganized schizotypy is enough to reduce the relationship to non-significant;extracting common variance with negative schizotypy slightly weakens the relationship but does not render it non-significant.  
+*R-squared for model with only negative and disorganized schizotypy* is equivalent to that of the full schizotypy model. 
+
+```{r echo=FALSE}
+lm(formula = cog_alex ~ pos_schz + neg_schz, data = main_df) %>% summary(); print("++++++++++++++++++++++++++++++++++++++++++++++++++++++")
+lm(formula = cog_alex ~ neg_schz + dis_schz, data = main_df) %>% summary(); print("++++++++++++++++++++++++++++++++++++++++++++++++++++++")
+lm(formula = cog_alex ~ pos_schz + neg_schz, data = main_df) %>% summary() ;print("++++++++++++++++++++++++++++++++++++++++++++++++++++++")
+```
+
+```{r echo=FALSE}
+plot.betas.cog = list(pos = main_df %>% 
+                 ggplot(aes(x = resid(lm(pos_schz ~ neg_schz + dis_schz, data = main_df)), y = cog_alex)) +
+                   geom_point(alpha = 0.5) + geom_smooth(method = "lm") + 
+                   coord_fixed(ratio = 2) + xlab("Positive Schz") + ylab("Cognitive Alexithymia"),
+               neg = main_df %>% 
+                 ggplot(aes(x = resid(lm(neg_schz ~ pos_schz + dis_schz, data = main_df)), y = cog_alex)) +
+                   geom_point(alpha = 0.5) + geom_smooth(method = "lm") + 
+                   coord_fixed(ratio = 2) + xlab("Negative Schz") + ylab("Cognitive Alexithymia"),
+               dis = main_df %>% 
+                 ggplot(aes(x = resid(lm(dis_schz ~ pos_schz + neg_schz, data = main_df)), y = cog_alex)) +
+                   geom_point(alpha = 0.5) + geom_smooth(method = "lm") + 
+                   coord_fixed(ratio = 2) + xlab("Disorganized Schz") + ylab("Cognitive Alexithymia"))
+grid.arrange(as.grob(plot.betas.cog[[1]]), as.grob(plot.betas.cog[[2]]), as.grob(plot.betas.cog[[3]]),
+             ncol = 3, nrow = 1, top = textGrob("Independent contributions of each schizotypy dimension ", gp = gpar(fontsize = 15, font = 1)))
+```
+
+#### Probing effects with BVAQ subscales
+
+*This section needs work* Particularly, figuring out how  to report these findings formally.
+
+The relationship between cognitive alexithymia and *disorganized schizotypy* is driven by the difficulty identifying emotions subscale. 
+
+```{r echo=FALSE}
+reg1 = lm(cog_alex ~ pos_schz + neg_schz + dis_schz + idnt_bvaq,  data = main_df)
+summary(reg1)
+modelEffectSizes(reg1)
+```
+
+Both difficulty verbalizing and difficulty analyzing emotions explain the relationship between *negative schizotypy* and cognitive alexithymia. Diff. Verbalizing contributes slightly more than Diff. Analyzing Emotions.
+
+*Together*
+```{r echo=FALSE}
+reg1 = lm(cog_alex ~ pos_schz + neg_schz + dis_schz + nlyz_bvaq + verb_bvaq,  data = main_df)
+summary(reg1)
+print("Betas"); coef(reg1)[2:4]; print("Effect sizes")
+modelEffectSizes(reg1)
+```
+
+*Invidually*
+```{r echo=FALSE}
+reg1 = lm(cog_alex ~ pos_schz + neg_schz + dis_schz + nlyz_bvaq,  data = main_df)
+summary(reg1)
+print("Betas"); coef(reg1)[2:4]; print("Effect sizes")
+modelEffectSizes(reg1)
+```
+
+```{r echo=FALSE}
+reg1 = lm(cog_alex ~ pos_schz + neg_schz + dis_schz + verb_bvaq,  data = main_df)
+summary(reg1)
+print("Betas"); coef(reg1)[2:4]; print("Effect sizes")
+modelEffectSizes(reg1)
+```
+
+#### Probing effects with PANAS
+
+```{r echo=FALSE}
+reg1 = lm(cog_alex ~ pos_schz + neg_schz + dis_schz + pa_PANAS,  data = main_df)
+summary(reg1)
+print("Betas"); coef(reg1)[2:5]; print("Effect sizes")
+modelEffectSizes(reg1)
+```
+
+```{r}
+reg1 = lm(cog_alex ~ pos_schz + neg_schz + dis_schz + na_PANAS,  data = main_df)
+summary(reg1)
+print("Betas"); coef(reg1)[2:5]; print("Effect sizes")
+modelEffectSizes(reg1)
+```
+
+```{r}
+reg1 = lm(cog_alex ~ pos_schz + neg_schz + dis_schz + pa_PANAS + na_PANAS,  data = main_df)
+summary(reg1)
+print("Betas"); coef(reg1)[2:6]; print("Effect sizes")
+modelEffectSizes(reg1)
+```
+
+
+### Affective Alexithymia
+```{r echo=FALSE}
+reg = lm(aff_alex ~ pos_schz + neg_schz + dis_schz, data = main_df)
+summary(reg)
+print("Betas"); coef(reg)[2:4]
+modelEffectSizes(reg)
+```
+
+*Relationship between negative schizotypy and affective alexithymia* grows stronger after accounting for common variance with positive and, in particular, disorganized schizotypy. 
+
+```{r echo=FALSE}
+lm(formula = cog_alex ~ pos_schz + neg_schz, data = main_df) %>% summary(); print("++++++++++++++++++++++++++++++++++++++++++++++++++++++")
+lm(formula = cog_alex ~ neg_schz + dis_schz, data = main_df) %>% summary(); print("++++++++++++++++++++++++++++++++++++++++++++++++++++++")
+lm(formula = cog_alex ~ pos_schz + neg_schz, data = main_df) %>% summary(); print("++++++++++++++++++++++++++++++++++++++++++++++++++++++")
+```
+
+```{r echo=FALSE}
+plot.betas.aff = list(pos = main_df %>% 
+                 ggplot(aes(x = resid(lm(pos_schz ~ neg_schz + dis_schz, data = main_df)), y = aff_alex)) +
+                   geom_point(alpha = 0.5) + geom_smooth(method = "lm") + 
+                   coord_fixed(ratio = 2) + xlab("Positive Schz") + ylab("Affective Alexithymia"),
+               neg = main_df %>% 
+                 ggplot(aes(x = resid(lm(neg_schz ~ pos_schz + dis_schz, data = main_df)), y = aff_alex)) +
+                   geom_point(alpha = 0.5) + geom_smooth(method = "lm") + 
+                   coord_fixed(ratio = 2) + xlab("Negative Schz") + ylab("Affective Alexithymia"),
+               dis = main_df %>% 
+                 ggplot(aes(x = resid(lm(dis_schz ~ pos_schz + neg_schz, data = main_df)), y = aff_alex)) +
+                   geom_point(alpha = 0.5) + geom_smooth(method = "lm") + 
+                   coord_fixed(ratio = 2) + xlab("Disorganized Schz") + ylab("Affective Alexithymia"))
+grid.arrange(as.grob(plot.betas.aff[[1]]), as.grob(plot.betas.aff[[2]]), as.grob(plot.betas.aff[[3]]),
+             ncol = 3, nrow = 1, top = textGrob("Independent contributions of each schizotypy dimension ", gp = gpar(fontsize = 15, font = 1)))
+```
+
+#### Probing effects with BVAQ subscales
+
+Emotionalizing drives effects with *negative and disorganized* schizotypy
+```{r echo=FALSE}
+reg1 = lm(aff_alex ~ pos_schz + neg_schz + dis_schz + emot_bvaq,  data = main_df)
+summary(reg1)
+print("Betas"); coef(reg1)[2:4]; print("Effect sizes")
+modelEffectSizes(reg1)
+```
+
+Fantasizing drives the effect of positive schizotypy:
+
+```{r echo=FALSE}
+reg1 = lm(aff_alex ~ pos_schz + neg_schz + dis_schz + fant_bvaq,  data = main_df)
+summary(reg1)
+print("Betas"); coef(reg1)[2:4]; print("Effect sizes")
+modelEffectSizes(reg1)
+```
+
+#### Probing effects with PANAS
+
+```{r echo=FALSE}
+reg1 = lm(aff_alex ~ pos_schz + neg_schz + dis_schz + pa_PANAS,  data = main_df)
+summary(reg1)
+print("Betas"); coef(reg1)[2:5]; print("Effect sizes")
+modelEffectSizes(reg1)
+```
+
+```{r}
+reg1 = lm(aff_alex ~ pos_schz + neg_schz + dis_schz + na_PANAS,  data = main_df)
+summary(reg1)
+print("Betas"); coef(reg1)[2:5]; print("Effect sizes")
+modelEffectSizes(reg1)
+```
+
+```{r}
+reg1 = lm(aff_alex ~ pos_schz + neg_schz + dis_schz + pa_PANAS + na_PANAS,  data = main_df)
+summary(reg1)
+print("Betas"); coef(reg1)[2:6]; print("Effect sizes")
+modelEffectSizes(reg1)
+```
+
+*Summary:* 
+Cognitive alexithymia is largely predicted by negative schizotypy, disorganized schizotypy and their overlap; relationships are positive: higher schizotypy represents higher difficulties associated with identifying, analyzing and verbalizing emotions.  
+Affective alexithymia is predicted by all schizotypy dimensions: here negative schizotypy and disorganized schizotypy have a supressing effect on each other as their effects occur in opposite directions. 
+
+## Detailed models
+
+### Dim.Emotionalizing
+```{r echo=FALSE}
+res.pa = lm(emot_bvaq ~ na_PANAS, main_df)$residuals
+reg = lm(emot_bvaq ~ pos_schz + neg_schz + dis_schz, data = main_df)
+summary(reg)
+print("Betas"); coef(reg)[2:4]
+modelEffectSizes(reg)
+```
+
+```{r echo=FALSE}
+lm(emot_bvaq ~ pos_schz + neg_schz, data = main_df) %>% summary(); print("++++++++++++++++++++++++++++++++++++++++++++++++++++++")
+lm(emot_bvaq ~ neg_schz + dis_schz, data = main_df) %>% summary(); print("++++++++++++++++++++++++++++++++++++++++++++++++++++++")
+lm(emot_bvaq ~ dis_schz + pos_schz, data = main_df) %>% summary(); print("++++++++++++++++++++++++++++++++++++++++++++++++++++++")
+```
+
+*Positive schizotypy* shows a negative relationship with diminished emotionalizing only when partialing out negative schz. but not after including disorganized schz. in the model.
+Effect of *negative schizotypy* grows stronger after accounting for disorganized schz. in particular, but also positive schz. 
+*Disorganized schizotypy* shows a negative relationship with diminished emotionalizing when partialing out negative schz. (effect survives after introducing positive schizotypy). 
+
+Simulatenous entry model is sufficient to describe emotionalizing findings.  
+
+```{r, echo=FALSE}
+plot.betas.emot = list(pos = main_df %>% 
+                 ggplot(aes(x = resid(lm(pos_schz ~ neg_schz + dis_schz, data = main_df)), y = emot_bvaq)) +
+                   geom_point(alpha = 0.5) + geom_smooth(method = "lm") + 
+                   coord_fixed(ratio = 2) + xlab("Positive Schz") + ylab("Emotionalizing"),
+               neg = main_df %>% 
+                 ggplot(aes(x = resid(lm(neg_schz ~ pos_schz + dis_schz, data = main_df)), y = emot_bvaq)) +
+                   geom_point(alpha = 0.5) + geom_smooth(method = "lm") + 
+                   coord_fixed(ratio = 2) + xlab("Negative Schz") + ylab("Emotionalizing"),
+               dis = main_df %>% 
+                 ggplot(aes(x = resid(lm(dis_schz ~ pos_schz + neg_schz, data = main_df)), y = emot_bvaq)) +
+                   geom_point(alpha = 0.5) + geom_smooth(method = "lm") + 
+                   coord_fixed(ratio = 2) + xlab("Disorganized Schz") + ylab("Emotionalizing"))
+grid.arrange(as.grob(plot.betas.emot[[1]]),
+             as.grob(plot.betas.emot[[2]]),
+             as.grob(plot.betas.emot[[3]]),
+             ncol = 3, nrow = 1, top = textGrob("Independent contributions of each schizotypy dimension ", gp = gpar(fontsize = 15, font = 1)))
+```
+
+*Slopes for Negative and Disorganized* are equivalent to the slopes for affective alexithymia.
+
+### Dim. Fantasizing
+
+```{r echo=FALSE}
+reg = lm(fant_bvaq ~ pos_schz + neg_schz + dis_schz, data = main_df)
+summary(reg)
+print("Betas"); coef(reg)[2:4]
+modelEffectSizes(reg)
+```
+
+The effect of *positive schizotypy* is stable. 
+The relationship between *Disorganized schizotypy* becomes non-significant when adjusting for positive schizotypy and does not change when adjusting for negative schizotypy. 
+*Negative schizotypy* shows no relationship at all with fantasizing.  
+ 
+```{r echo=FALSE}
+lm(fant_bvaq ~ pos_schz + neg_schz, data = main_df) %>% summary(); print("++++++++++++++++++++++++++++++++++++++++++++++++++++++")
+lm(fant_bvaq ~ neg_schz + dis_schz, data = main_df) %>% summary(); print("++++++++++++++++++++++++++++++++++++++++++++++++++++++")
+lm(fant_bvaq ~ dis_schz + pos_schz, data = main_df) %>% summary(); print("++++++++++++++++++++++++++++++++++++++++++++++++++++++")
+```
+
+*Slope for positive schizotypy is equivalent to summarized model.*  
+
+```{r echo=FALSE}
+plot.betas.fant = list(pos = main_df %>% 
+                 ggplot(aes(x = resid(lm(pos_schz ~ neg_schz + dis_schz, data = main_df)), y = fant_bvaq)) +
+                   geom_point(alpha = 0.5) + geom_smooth(method = "lm") + 
+                   coord_fixed(ratio = 2) + xlab("Positive Schz") + ylab("Fantasizing"),
+               neg = main_df %>% 
+                 ggplot(aes(x = resid(lm(neg_schz ~ pos_schz + dis_schz, data = main_df)), y = fant_bvaq)) +
+                   geom_point(alpha = 0.5) + geom_smooth(method = "lm") + 
+                   coord_fixed(ratio = 2) + xlab("Negative Schz") + ylab("Fantasizing"),
+               dis = main_df %>% 
+                 ggplot(aes(x = resid(lm(dis_schz ~ pos_schz + neg_schz, data = main_df)), y = fant_bvaq)) +
+                   geom_point(alpha = 0.5) + geom_smooth(method = "lm") + 
+                   coord_fixed(ratio = 2) + xlab("Disorganized Schz") + ylab("Fantasizing"))
+
+grid.arrange(as.grob(plot.betas.fant[[1]]),
+             as.grob(plot.betas.fant[[2]]),
+             as.grob(plot.betas.fant[[3]]),
+             ncol = 3, nrow = 1, top = textGrob("Independent contributions of each schizotypy dimension ", gp = gpar(fontsize = 15, font = 1)))
+
+```
+
+### Diff. Identifying Emotions
+
+```{r echo=FALSE}
+reg = lm(idnt_bvaq ~ pos_schz + neg_schz + dis_schz, data = main_df)
+summary(reg)
+print("Coefficients"); coef(reg)[2:4]
+print("Effect Size"); modelEffectSizes(reg)
+```
+
+*Negative schizotypy* shows the most stable effect.
+
+See more in [Summary](#summary)
+
+```{r echo=FALSE}
+lm(idnt_bvaq ~ pos_schz + neg_schz, data = main_df) %>% summary(); print("++++++++++++++++++++++++++++++++++++++++++++++++++++++")
+lm(idnt_bvaq ~ neg_schz + dis_schz, data = main_df) %>% summary(); print("++++++++++++++++++++++++++++++++++++++++++++++++++++++")
+lm(idnt_bvaq ~ dis_schz + pos_schz, data = main_df) %>% summary(); print("++++++++++++++++++++++++++++++++++++++++++++++++++++++")
+```
+
+
+```{r echo=FALSE}
+plot.betas.idnt = list(pos = main_df %>% 
+                 ggplot(aes(x = resid(lm(pos_schz ~ neg_schz + dis_schz, data = main_df)), y = idnt_bvaq)) +
+                   geom_point(alpha = 0.5) + geom_smooth(method = "lm") + 
+                   coord_fixed(ratio = 2) + xlab("Positive Schz") + ylab("Identifying Emotions"),
+               neg = main_df %>% 
+                 ggplot(aes(x = resid(lm(neg_schz ~ pos_schz + dis_schz, data = main_df)), y = idnt_bvaq)) +
+                   geom_point(alpha = 0.5) + geom_smooth(method = "lm") + 
+                   coord_fixed(ratio = 2) + xlab("Negative Schz") + ylab("Identifying Emotions"),
+               dis = main_df %>% 
+                 ggplot(aes(x = resid(lm(dis_schz ~ pos_schz + neg_schz, data = main_df)), y = idnt_bvaq)) +
+                   geom_point(alpha = 0.5) + geom_smooth(method = "lm") + 
+                   coord_fixed(ratio = 2) + xlab("Disorganized Schz") + ylab("Identifying Emotions"))
+
+grid.arrange(as.grob(plot.betas.idnt[[1]]), as.grob(plot.betas.idnt[[2]]), as.grob(plot.betas.idnt[[3]]),
+             ncol = 3, nrow = 1, top = textGrob("Independent contributions of each schizotypy dimension ", gp = gpar(fontsize = 15, font = 1)))
+
+```
+
+### Diff. Analyzing Emotions
+
+```{r echo=FALSE}
+reg = lm(nlyz_bvaq ~ pos_schz + neg_schz + dis_schz, data = main_df)
+summary(reg)
+print("Coefficients"); coef(reg)[2:4]
+print("Delta Rs"); modelEffectSizes(reg)
+```
+
+Effect of *negative schizotypy is the most stable*
+Correlation with *Disorganized schizotypy* is reduced by half when accounting for negative schz.
+
+```{r echo=FALSE}
+lm(nlyz_bvaq ~ pos_schz + neg_schz, data = main_df) %>% summary(); print("++++++++++++++++++++++++++++++++++++++++++++++++++++++")
+lm(nlyz_bvaq ~ neg_schz + dis_schz, data = main_df) %>% summary(); print("++++++++++++++++++++++++++++++++++++++++++++++++++++++")
+lm(nlyz_bvaq ~ dis_schz + pos_schz, data = main_df) %>% summary(); print("++++++++++++++++++++++++++++++++++++++++++++++++++++++")
+```
+
+```{r echo=FALSE}
+plot.betas.nlyz = list(pos = main_df %>% 
+                 ggplot(aes(x = resid(lm(pos_schz ~ neg_schz + dis_schz, data = main_df)), y = nlyz_bvaq)) +
+                   geom_point(alpha = 0.5) + geom_smooth(method = "lm") + 
+                   coord_fixed(ratio = 2) + xlab("Positive Schz") + ylab("Analyzing Emotions"),
+               neg = main_df %>% 
+                 ggplot(aes(x = resid(lm(neg_schz ~ pos_schz + dis_schz, data = main_df)), y = nlyz_bvaq)) +
+                   geom_point(alpha = 0.5) + geom_smooth(method = "lm") + 
+                   coord_fixed(ratio = 2) + xlab("Negative Schz") + ylab("Analyzing Emotions"),
+               dis = main_df %>% 
+                 ggplot(aes(x = resid(lm(dis_schz ~ pos_schz + neg_schz, data = main_df)), y = nlyz_bvaq)) +
+                   geom_point(alpha = 0.5) + geom_smooth(method = "lm") + 
+                   coord_fixed(ratio = 2) + xlab("Disorganized Schz") + ylab("Analyzing Emotions"))
+
+grid.arrange(as.grob(plot.betas.nlyz[[1]]), as.grob(plot.betas.nlyz[[2]]), as.grob(plot.betas.nlyz[[3]]),
+             ncol = 3, nrow = 1, top = textGrob("Independent contributions of each schizotypy dimension ", gp = gpar(fontsize = 15, font = 1)))
+
+```
+
+### Diff. Verbalizing Emotions
+
+```{r echo=FALSE}
+reg = lm(verb_bvaq ~ pos_schz + neg_schz + dis_schz, data = main_df)
+summary(reg)
+print("Coefficients"); coef(reg)[2:4]
+print("Delta Rs"); modelEffectSizes(reg)
+```
+
+```{r echo=FALSE}
+plot.betas.verb = list(pos = main_df %>% 
+                 ggplot(aes(x = resid(lm(pos_schz ~ neg_schz + dis_schz, data = main_df)), y = verb_bvaq)) +
+                   geom_point(alpha = 0.5) + geom_smooth(method = "lm") + 
+                   coord_fixed(ratio = 2) + xlab("Positive Schz") + ylab("Verbalizing Emotions"),
+               neg = main_df %>% 
+                 ggplot(aes(x = resid(lm(neg_schz ~ pos_schz + dis_schz, data = main_df)), y = verb_bvaq)) +
+                   geom_point(alpha = 0.5) + geom_smooth(method = "lm") + 
+                   coord_fixed(ratio = 2) + xlab("Negative Schz") + ylab("Verbalizing Emotions"),
+               dis = main_df %>% 
+                 ggplot(aes(x = resid(lm(dis_schz ~ pos_schz + neg_schz, data = main_df)), y = verb_bvaq)) +
+                   geom_point(alpha = 0.5) + geom_smooth(method = "lm") + 
+                   coord_fixed(ratio = 2) + xlab("Disorganized Schz") + ylab("Verbalizing Emotions"))
+
+grid.arrange(as.grob(plot.betas.verb[[1]]),
+             as.grob(plot.betas.verb[[2]]),
+             as.grob(plot.betas.verb[[3]]),
+             ncol = 3, nrow = 1, top = textGrob("Independent contributions of each schizotypy dimension ", gp = gpar(fontsize = 15, font = 1)))
+```
+
+# Summary {#summary}
+
+*Identifying emotions:*
+All schizotypy dimensions predict difficulties in identifying emotions. Disorganized schizotypy showed the strongest effect (b = -.42) followed by negative schizotypy (b = -.18) and positive schizotypy (b = -.08). Disorganized schizotypy in particular explained 13% of the variance in identifying emotions beyond the other two schizotypy dimensions. Multiple R-squared for the whole model is 0.30. In conjunction with low ∆Rs for positive and negative schizotypy—but not disorganized (∆R =  .13) results suggest that difficulty identifying emotions may potentially be particularly associated with a general factor of vulnerability toward psychosis, in addition to cognitive difficulties associated with schizotypy.
+
+*Analyzing emotions:*
+Negative and disorganized schizotypy predict difficulties in analyzing emotions. Negative schizotypy shows a medium effect size (b  = -.33) and disorganized schizotypy shows a more moderate effect (b = -.17). Multiple R-squared for the whole model is 0.17. ∆R-squared for negative schizotypy being 0.09 (compared to disorganized schizotypy (.02)) suggests it may largely be that socio-emotional factors drive this effect, with a small contribution from cognitive disturbance factors. 
+
+*Verbalizing emotions:*
+Similarly, negative (b = -.37) and disorganized (b = -.21) schizotypy predict difficulties in verbalizing emotions. Multiple R-squared for the whole model is 0.24. The magnitude and overall pattern of correlation coefficient suggests difficulty verbalizing may largely overlap with difficulty analyzing emotions. These effects may point to the same underlying process. 
+
+*Emotionalizing:*
+Negative schizotypy shows a strong negative correlation with emotionalizing (b = -.42) and its ∆R (= 0.187) is particularly high. Surprisingly, disorganized schizotypy shows a positive relationship with emotionalizing after common variance with negative schizotypy has been extracted. It may be a good idea to examine if the overlap between disorganized schizotypy and emotionalizing negatively predicts social functioning in this dataset or emotional disregulation in a future study. 
+
+*Fantasizing:*
+As expected, positive schizotypy shows a moderate positive correlation with fantasizing (b = 0.24). No other schizotypy dimensions significantly correlate with fantasizing. 
+
+# Conclusions 
+Negative schizotypy shows moderate-to-strong relationships with decreases in emotional awareness. The negative dimension seems to characterize cognitive-affective traits assessed by the BVAQ (except for fantasizing). As a next step, I would like to examine how the significant effects/covariances predict social functioning relative to negative schizotypy and emotional awareness dimensions alone. Before that, I can introduce the PANAS variables as covariates to see if these relationships are independent of particular affective traits.  
+Disorganized cognition/schizotypy also tended to show small-to-moderate associations with emotional awareness subscales. Except for the case of emotionalizing, I am hesitant to conclude that the relationship between disorganized schizotypy and EA is separate from that of negative schizotypy and EA (i.e. that they point to two different processes).  
+Positive schizotypy did not tend to be associated with EA components. This contradicts previous findings of studies. I believe this largely due to introducing disorganized schizotypy in the model (for which, arguably, there weren't any good instruments available before the MSS). The relationship with fantasizing may be interesting to examine in the context of social functioning. 
