@@ -1,7 +1,5 @@
 # Project results
 
 ## Folder structure
-Add a note here to explain the subfolders (if applicable). For example, folders can be arranged by date or version.
-
-## Files
-Add a bullet point describing the source and contents of each file, such as column descriptors for data and captions for figures.
+'internal' contains pdfs and other files used for internal report.
+Gonzenbach_MS_2020.pdf presents the results from the 'notebooks/linear_models' analysis. The tables were structured via 'src/make_regression_tables.R'

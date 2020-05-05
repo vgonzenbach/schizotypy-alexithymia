@@ -1,22 +1,11 @@
 # Examining the multidimensional relationship between dimensions of schizotypy and alexithymic deficits
 
-TThis proroject examines the relationship between the multidimensional constructs of schhizophrenia-related cognitive and behavioral features (i.e. schizotypy) and cthe cognitive and affective processes underlying alexithymic deficists.
+This project examines the multidimensional relationship between schizophrenia-related cognitive and behavioral features (i.e. schizotypy) and the cognitive and affective processes underlying alexithymic deficits.
 
-## Getting started
-First, [install the Docker client](http://docs.docker.com) for your system.
-
-Then, in a terminal, change to the project directory (the one containing this file) and:
-
-- Test the installation using `docker info`
-- Run `python build.py` to download data and run any preprocessing steps
-- Start the notebook container by running `sh start_notebook.sh` from this directory
-
-Now your notebook server is running! Open a browser and point to `http://localhost`. Next,
-
-- Log into RStudio with username `rstudio`, password `rstudio`
-- Open `notebook.Rmd`
-- If you're accessing a finished notebook, you can browse, edit the code, and execute the cells to reproduce or alter the figures.
-- If you're starting a new notebook, read the project guidelines in the notebook and start coding!
++ The main results are presented as a [poster](results/Gonzenbach_MS_2020.pdf). 
++ Pdf articles are included to provide background for the poster. They can be found in this [folder](ref/articles), with the corresponding [bibliography](ref/README.md).
++ [The detailed analysis report](results/internal/linear_models.pdf), and the [computational notebook](notebooks/linear_models/notebook.Rmd) that generated it are also included in this repository.
++ The code that generated the regression tables can be found [here](src/make_regression_tables.R). 
 
 ---
-*created with [cookiecutter](http://cookiecutter.readthedocs.io/en/latest/), using the [Outlier Bio project template](https://github.com/outlierbio/ob-project-template)*
+*this repository was initialized with [cookiecutter](http://cookiecutter.readthedocs.io/en/latest/), using the [Outlier Bio project template](https://github.com/outlierbio/ob-project-template)*
